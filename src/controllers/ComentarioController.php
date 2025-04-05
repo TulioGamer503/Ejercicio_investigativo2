@@ -1,25 +1,27 @@
 <?php
 
 use Psr\Http\Message\ServerRequestInterface;
-use React\Promise\Promise;
+use React\Http\Message\Response;
+use React\MySQL\QueryResult;
+
+// Importa funciones del modelo
+require_once __DIR__ . '/../models/comentarios.php';
 
 function handleComentarios(ServerRequestInterface $request, $connection)
 {
-    if ($request->getMethod() === 'GET') {
-        return $connection->query('SELECT * FROM comentarios')
-            ->then(function ($result) {
-                return new React\Http\Message\Response(200, ['Content-Type' => 'application/json'], json_encode($result->resultRows));
-            });
+    $method = $request->getMethod();
+
+    if ($method === 'GET') {
+        return obtenerComentarios($connection);
     }
 
-    if ($request->getMethod() === 'POST') {
-        $body = json_decode((string) $request->getBody(), true);
-
-        return $connection->query('INSERT INTO comentarios (texto) VALUES (?)', [$body['texto']])
-            ->then(function () {
-                return new React\Http\Message\Response(201, [], "Comentario agregado");
-            });
+    if ($method === 'POST') {
+        return crearComentario($request, $connection);
     }
 
-    return new React\Http\Message\Response(405, ['Content-Type' => 'text/plain'], "Método no permitido");
+    return new Response(
+        405,
+        ['Content-Type' => 'text/plain'],
+        'Método no permitido'
+    );
 }
